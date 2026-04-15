@@ -1,6 +1,9 @@
 name: Generate GPG Key (Run Once, Then Delete)
 
 on:
+  push:
+    branches:
+      - release
   workflow_dispatch:
     inputs:
       name:
