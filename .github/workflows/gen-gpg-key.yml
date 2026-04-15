@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Generate GPG key
         run: |
-          cat > /tmp/keygen.batch <<EOF
+          cat > /tmp/keygen.batch <<'EOF'
           %echo Generating GPG key
           Key-Type: RSA
           Key-Length: 4096
@@ -35,6 +35,7 @@ jobs:
           %commit
           %echo Done
           EOF
+          sed -i 's/^[[:space:]]*//' /tmp/keygen.batch
           gpg --batch --generate-key /tmp/keygen.batch
 
       - name: Export private key
