@@ -163,44 +163,63 @@
                 </executions>
             </plugin>
 
-            <!-- Required by Central: GPG-sign all artifacts -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                        <configuration>
-                            <gpgArguments>
-                                <arg>--pinentry-mode</arg>
-                                <arg>loopback</arg>
-                            </gpgArguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Sonatype Central Portal publisher -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.5.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <!-- Must match the <server id="central"> in ~/.m2/settings.xml -->
-                    <publishingServerId>central</publishingServerId>
-                    <!-- false = review in the portal before releasing to Maven Central -->
-                    <autoPublish>false</autoPublish>
-                    <waitUntil>uploaded</waitUntil>
-                </configuration>
-            </plugin>
-
         </plugins>
     </build>
+
+    <!--
+        Release profile — activated automatically by the GitHub Actions workflow.
+        Contains GPG signing and Central Portal publishing so that local
+        builds (mvn install / mvn package) never need a GPG key.
+
+        To publish locally: mvn clean deploy -Prelease
+    -->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+
+                    <!-- GPG-sign all artifacts -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.4</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- passphrase injected via -Dgpg.passphrase in CI -->
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Sonatype Central Portal publisher -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.5.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <!-- Matches <server id="central"> in settings.xml / CI env -->
+                            <publishingServerId>central</publishingServerId>
+                            <!-- CI publishes automatically; flip to false for manual review -->
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
