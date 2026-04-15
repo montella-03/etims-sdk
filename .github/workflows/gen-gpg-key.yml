@@ -1,45 +1,45 @@
-#name: Generate GPG Key (Run Once, Then Delete)
-#
-#on:
-#  workflow_dispatch:
-#    inputs:
-#      name:
-#        description: 'Christopher oigo'
-#        required: true
-#      email:
-#        description: 'oigoc60@gmail.com'
-#        required: true
-#      passphrase:
-#        description: 'Sdf@1234'
-#        required: true
-#
-#jobs:
-#  generate:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Generate GPG key
-#        run: |
-#          cat > /tmp/keygen.batch <<EOF
-#          %echo Generating GPG key
-#          Key-Type: RSA
-#          Key-Length: 4096
-#          Subkey-Type: RSA
-#          Subkey-Length: 4096
-#          Name-Real: ${{ github.event.inputs.name }}
-#          Name-Email: ${{ github.event.inputs.email }}
-#          Expire-Date: 0
-#          Passphrase: ${{ github.event.inputs.passphrase }}
-#          %commit
-#          %echo Done
-#          EOF
-#          gpg --batch --generate-key /tmp/keygen.batch
-#
-#      - name: Export private key
-#        run: |
-#          KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep sec | awk '{print $2}' | cut -d'/' -f2)
-#          echo "====== COPY EVERYTHING BELOW AS MAVEN_GPG_PRIVATE_KEY ======"
-#          gpg --armor --export-secret-keys "$KEY_ID"
-#          echo "====== END OF MAVEN_GPG_PRIVATE_KEY ======"
-#          echo ""
-#          echo "Key ID (for reference): $KEY_ID"
-#          echo "MAVEN_GPG_PASSPHRASE = the passphrase you entered above"
+name: Generate GPG Key (Run Once, Then Delete)
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Christopher oigo'
+        required: true
+      email:
+        description: 'oigoc60@gmail.com'
+        required: true
+      passphrase:
+        description: 'Sdf@1234'
+        required: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GPG key
+        run: |
+          cat > /tmp/keygen.batch <<EOF
+          %echo Generating GPG key
+          Key-Type: RSA
+          Key-Length: 4096
+          Subkey-Type: RSA
+          Subkey-Length: 4096
+          Name-Real: ${{ github.event.inputs.name }}
+          Name-Email: ${{ github.event.inputs.email }}
+          Expire-Date: 0
+          Passphrase: ${{ github.event.inputs.passphrase }}
+          %commit
+          %echo Done
+          EOF
+          gpg --batch --generate-key /tmp/keygen.batch
+
+      - name: Export private key
+        run: |
+          KEY_ID=$(gpg --list-secret-keys --keyid-format=long | grep sec | awk '{print $2}' | cut -d'/' -f2)
+          echo "====== COPY EVERYTHING BELOW AS MAVEN_GPG_PRIVATE_KEY ======"
+          gpg --armor --export-secret-keys "$KEY_ID"
+          echo "====== END OF MAVEN_GPG_PRIVATE_KEY ======"
+          echo ""
+          echo "Key ID (for reference): $KEY_ID"
+          echo "MAVEN_GPG_PASSPHRASE = the passphrase you entered above"
