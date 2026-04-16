@@ -38,7 +38,7 @@ Add the following to your `pom.xml`:
 <dependency>
     <groupId>io.github.montella-03</groupId>
     <artifactId>etims-sdk</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
