@@ -8,7 +8,7 @@
 
     <groupId>io.github.montella-03</groupId>
     <artifactId>etims-sdk</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>KRA eTIMS Java SDK</name>
@@ -34,7 +34,7 @@
         <connection>scm:git:git://github.com/montella-03/etims-sdk.git</connection>
         <developerConnection>scm:git:ssh://github.com/montella-03/etims-sdk.git</developerConnection>
         <url>https://github.com/montella-03/etims-sdk</url>
-        <tag>v1.0.0</tag>
+        <tag>v1.1.0</tag>
     </scm>
 
     <properties>
