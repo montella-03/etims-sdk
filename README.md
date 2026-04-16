@@ -10,6 +10,7 @@ A Java SDK for integrating Hospital Management Systems (and any Java application
 - **Fluent response handling** — `EtimsResult` exposes `getQrCode()`, `getRcptNo()`, `getIntrlData()` and `throwIfFailed()`
 - **Credit & Debit Notes** — `sendCreditNote()` and `sendDebitNote()` out of the box
 - **Spring Boot ready** — zero-config auto-configuration via `@ConfigurationProperties`
+- **Multi-tenant support** — run one SDK instance per facility/branch, all from `application.yml`
 - **SLF4J logging** — works with Logback, Log4j 2, or any SLF4J-compatible backend
 - **Sandbox / Production** — toggle with a single property
 - **VSCU support** — route requests to a local virtual device for development
@@ -133,6 +134,109 @@ No `@Bean`, no `@Import` — the SDK registers itself automatically via Spring B
 
 ---
 
+## Multi-Tenant Mode (Spring Boot)
+
+When your application serves multiple facilities, branches, or companies — each with their own KRA TIN or device serial — configure a named tenant per facility.  The SDK will register one `EtimsSdk` instance per tenant and expose them through an `EtimsSdkRegistry` bean.
+
+### 1. Configure tenants
+
+```yaml
+# application.yml
+etims:
+  production: true          # root default — inherited by all tenants
+  auto-initialize: true     # root default — can be overridden per tenant
+  default-tenant: nairobi   # returned by EtimsSdkRegistry.getDefaultSdk()
+
+  tenants:
+    nairobiHospital:
+      tin: P051234567X
+      bhf-id: "00"
+      device-srl-no: SN-001
+
+    mombasaLevel5:
+      tin: P051234567X
+      bhf-id: "01"
+      device-srl-no: SN-002
+
+    kisumuNationalHospital:
+      tin: P059876543Y       # different taxpayer
+      bhf-id: "00"
+      device-srl-no: SN-003
+      production: false      # override: keep this branch in sandbox
+      auto-initialize: false # override: initialize manually
+```
+
+> Any field omitted on a tenant entry inherits the corresponding root-level value.
+> Only `tin` and `device-srl-no` must be set if they differ between tenants.
+
+### 2. Inject `EtimsSdkRegistry`
+
+```java
+@Service
+public class BillingService {
+
+    private final EtimsSdkRegistry etimsRegistry;
+
+    public BillingService(EtimsSdkRegistry etimsRegistry) {
+        this.etimsRegistry = etimsRegistry;
+    }
+
+    public String processInvoice(String facilityId, String invoiceNo,
+                                 String patientName, List<SalesTrnsItem> items) {
+        EtimsSdk sdk = etimsRegistry.getSdk(facilityId); // e.g. "nairobi"
+        EtimsResult result = sdk.sendBill(invoiceNo, patientName, null, items, "01");
+        result.throwIfFailed();
+        return result.getRcptNo().orElseThrow();
+    }
+}
+```
+
+### 3. Use the default tenant
+
+```java
+// Shorthand when a default-tenant is configured
+EtimsSdk sdk = etimsRegistry.getDefaultSdk();
+```
+
+### Registry API
+
+| Method | Description |
+|--------|-------------|
+| `getSdk(tenantId)` | Returns the SDK for the named tenant; throws `IllegalArgumentException` if not found |
+| `getDefaultSdk()` | Returns the SDK for `etims.default-tenant`; throws `IllegalStateException` if not configured |
+| `hasTenant(tenantId)` | Returns `true` if the tenant key is registered |
+| `getTenantIds()` | Returns an unmodifiable `Set` of all configured tenant keys |
+| `size()` | Returns the number of registered tenants |
+
+### Lazy initialization per tenant
+
+```yaml
+etims:
+  auto-initialize: false   # disable globally
+  tenants:
+    nairobiHospital:
+      ...
+      auto-initialize: true  # override: initialize this tenant on startup
+    kisumuNationalHospital:
+      ...
+      # auto-initialize not set → inherits false from root
+```
+
+For tenants that skip auto-initialization, call `initialize()` yourself:
+
+```java
+@PostConstruct
+public void init() {
+    if (!etimsRegistry.getSdk("kisumuNationalHospital").isInitialized()) {
+        etimsRegistry.getSdk("kisumuNationalHospital").initialize();
+    }
+}
+```
+
+> **Note:** In multi-tenant mode the single `EtimsSdk` and `EtimsConfig` beans are **not** registered.  Inject `EtimsSdkRegistry` instead.  Single-tenant mode (flat `etims.tin` properties) is unaffected.
+
+---
+
 ## Credit Notes and Debit Notes
 
 ### Credit Note (reversal)
@@ -246,7 +350,9 @@ try {
 | `useVscu` | boolean | `false` | `true` = local VSCU device |
 | `vscuBaseUrl` | String | `http://localhost:8088/` | VSCU base URL |
 
-### `application.properties` (Spring Boot)
+### `application.properties` / `application.yml` (Spring Boot)
+
+#### Single-tenant
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -257,6 +363,29 @@ try {
 | `etims.use-vscu` | boolean | `false` | `true` = local VSCU device |
 | `etims.vscu-base-url` | String | `http://localhost:8088/` | VSCU base URL |
 | `etims.auto-initialize` | boolean | `true` | Auto-init device on startup |
+
+#### Multi-tenant root keys
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `etims.default-tenant` | String | — | Key of the default tenant for `getDefaultSdk()` |
+| `etims.tenants` | Map | `{}` | Named tenant map — activates multi-tenant mode when non-empty |
+| `etims.production` | boolean | `false` | Default for all tenants unless overridden |
+| `etims.auto-initialize` | boolean | `true` | Default for all tenants unless overridden |
+| `etims.use-vscu` | boolean | `false` | Default for all tenants unless overridden |
+| `etims.vscu-base-url` | String | `http://localhost:8088/` | Default for all tenants unless overridden |
+
+#### Per-tenant keys (`etims.tenants.<name>.*`)
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `tin` | String | inherits root | KRA Taxpayer TIN for this tenant |
+| `bhf-id` | String | inherits root | Branch ID for this tenant |
+| `device-srl-no` | String | inherits root | Device serial for this tenant |
+| `production` | Boolean | inherits root | `true` = live KRA endpoint |
+| `use-vscu` | Boolean | inherits root | `true` = local VSCU device |
+| `vscu-base-url` | String | inherits root | VSCU base URL |
+| `auto-initialize` | Boolean | inherits root | Auto-init this tenant's device on startup |
 
 ---
 
@@ -287,8 +416,9 @@ src/main/java/ke/co/montella/etims/
 │   ├── SendSalesTrnsRequest.java  ← transaction request DTO
 │   └── InitOsdcRequest.java       ← initialization request DTO
 └── spring/
-    ├── EtimsProperties.java       ← @ConfigurationProperties
-    └── EtimsAutoConfiguration.java← Spring Boot auto-configuration
+    ├── EtimsProperties.java        ← @ConfigurationProperties (single + multi-tenant)
+    ├── EtimsSdkRegistry.java       ← multi-tenant SDK registry bean
+    └── EtimsAutoConfiguration.java ← Spring Boot auto-configuration
 ```
 
 ---
