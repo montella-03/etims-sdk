@@ -103,6 +103,15 @@ public class EtimsProperties {
     private String vscuBaseUrl = "http://localhost:8088/";
 
     /**
+     * Integration token (Bearer token) required by the VSCU device.
+     * <p>Only used when {@link #isUseVscu()} is {@code true}.  Obtain this
+     * value from your VSCU device's management interface and set it via:
+     * <pre>etims.vscu-integration-token=your-token-here</pre>
+     * Tenants may override this per-tenant.
+     */
+    private String vscuIntegrationToken;
+
+    /**
      * When {@code true} (default), the SDK calls {@code EtimsSdk.initialize()}
      * automatically during Spring Boot application startup.
      * <p>Set to {@code false} to control initialization timing manually.
@@ -166,6 +175,9 @@ public class EtimsProperties {
 
         /** {@code null} → inherit {@code etims.vscu-base-url}. */
         private String vscuBaseUrl;
+
+        /** {@code null} → inherit {@code etims.vscu-integration-token}. */
+        private String vscuIntegrationToken;
 
         /** {@code null} → inherit {@code etims.auto-initialize}. */
         private Boolean autoInitialize;
