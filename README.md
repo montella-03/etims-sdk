@@ -41,8 +41,7 @@ Add the following to your `pom.xml`:
     <version>1.1.0</version>
 </dependency>
 ```
-```compile "io.github.montella-03:etims-sdk:1.1.0"
-```
+compile "io.github.montella-03:etims-sdk:1.1.0"
 
 > The SDK ships the SLF4J API but **not** a logging backend.  Add your preferred
 > backend (Logback, Log4j 2, etc.) to your project or Spring Boot will provide one
