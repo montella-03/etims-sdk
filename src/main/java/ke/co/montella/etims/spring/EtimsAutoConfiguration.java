@@ -111,6 +111,7 @@ public class EtimsAutoConfiguration {
             config.setProduction(properties.isProduction());
             config.setUseVscu(properties.isUseVscu());
             config.setVscuBaseUrl(properties.getVscuBaseUrl());
+            config.setVscuIntegrationToken(properties.getVscuIntegrationToken());
             return config;
         }
 
@@ -218,6 +219,8 @@ public class EtimsAutoConfiguration {
                     ? tenant.getUseVscu() : root.isUseVscu());
             config.setVscuBaseUrl(tenant.getVscuBaseUrl() != null
                     ? tenant.getVscuBaseUrl() : root.getVscuBaseUrl());
+            config.setVscuIntegrationToken(tenant.getVscuIntegrationToken() != null
+                    ? tenant.getVscuIntegrationToken() : root.getVscuIntegrationToken());
             return config;
         }
     }

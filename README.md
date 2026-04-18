@@ -38,9 +38,10 @@ Add the following to your `pom.xml`:
 <dependency>
     <groupId>io.github.montella-03</groupId>
     <artifactId>etims-sdk</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
+compile "io.github.montella-03:etims-sdk:1.1.1"
 
 > The SDK ships the SLF4J API but **not** a logging backend.  Add your preferred
 > backend (Logback, Log4j 2, etc.) to your project or Spring Boot will provide one
@@ -145,6 +146,7 @@ When your application serves multiple facilities, branches, or companies — eac
 etims:
   production: true          # root default — inherited by all tenants
   auto-initialize: true     # root default — can be overridden per tenant
+  use-vscu: true            # optional root default
   default-tenant: nairobi   # returned by EtimsSdkRegistry.getDefaultSdk()
 
   tenants:
@@ -152,16 +154,19 @@ etims:
       tin: P051234567X
       bhf-id: "00"
       device-srl-no: SN-001
+      vscu-integration-token: nairobi-token
 
     mombasaLevel5:
       tin: P051234567X
       bhf-id: "01"
       device-srl-no: SN-002
+      vscu-integration-token: mombasa-token
 
     kisumuNationalHospital:
       tin: P059876543Y       # different taxpayer
       bhf-id: "00"
       device-srl-no: SN-003
+      vscu-integration-token: kisumu-token
       production: false      # override: keep this branch in sandbox
       auto-initialize: false # override: initialize manually
 ```
@@ -303,8 +308,18 @@ dn.throwIfFailed();
 
 ## VSCU Mode (Local Virtual Device)
 
+The VSCU device requires an **integration token** (Bearer token) for all API calls.  Obtain it from your VSCU device's management interface.
+
 ```java
-// Switch to local VSCU for development / testing
+// Configure the integration token alongside the base URL
+EtimsConfig config = new EtimsConfig();
+config.setUseVscu(true);
+config.setVscuBaseUrl("http://localhost:8088/");
+config.setVscuIntegrationToken("your-integration-token");
+
+EtimsSdk sdk = new EtimsSdk(config);
+
+// Or switch at runtime (token must already be set in config)
 sdk.useVscu("http://localhost:8088/");
 
 // Switch back to KRA cloud (OSCU)
@@ -316,7 +331,27 @@ In Spring Boot:
 ```properties
 etims.use-vscu=true
 etims.vscu-base-url=http://localhost:8088/
+etims.vscu-integration-token=your-integration-token
 ```
+
+In multi-tenant mode, each tenant can override that token independently:
+
+```yaml
+etims:
+  use-vscu: true
+  vscu-integration-token: shared-default-token
+  tenants:
+    branchA:
+      tin: P051234567X
+      device-srl-no: SN-001
+      vscu-integration-token: branch-a-token
+    branchB:
+      tin: P051234567X
+      device-srl-no: SN-002
+      vscu-integration-token: branch-b-token
+```
+
+The token is sent automatically as `Authorization: Bearer <token>` on every VSCU request.
 
 ---
 
@@ -349,6 +384,7 @@ try {
 | `production` | boolean | `false` | `true` = live KRA endpoint |
 | `useVscu` | boolean | `false` | `true` = local VSCU device |
 | `vscuBaseUrl` | String | `http://localhost:8088/` | VSCU base URL |
+| `vscuIntegrationToken` | String | — | Bearer token required by the VSCU device |
 
 ### `application.properties` / `application.yml` (Spring Boot)
 
@@ -362,6 +398,7 @@ try {
 | `etims.production` | boolean | `false` | `true` = live KRA endpoint |
 | `etims.use-vscu` | boolean | `false` | `true` = local VSCU device |
 | `etims.vscu-base-url` | String | `http://localhost:8088/` | VSCU base URL |
+| `etims.vscu-integration-token` | String | — | Bearer token required by the VSCU device |
 | `etims.auto-initialize` | boolean | `true` | Auto-init device on startup |
 
 #### Multi-tenant root keys
@@ -374,6 +411,7 @@ try {
 | `etims.auto-initialize` | boolean | `true` | Default for all tenants unless overridden |
 | `etims.use-vscu` | boolean | `false` | Default for all tenants unless overridden |
 | `etims.vscu-base-url` | String | `http://localhost:8088/` | Default for all tenants unless overridden |
+| `etims.vscu-integration-token` | String | — | Default VSCU Bearer token for all tenants |
 
 #### Per-tenant keys (`etims.tenants.<name>.*`)
 
@@ -385,6 +423,7 @@ try {
 | `production` | Boolean | inherits root | `true` = live KRA endpoint |
 | `use-vscu` | Boolean | inherits root | `true` = local VSCU device |
 | `vscu-base-url` | String | inherits root | VSCU base URL |
+| `vscu-integration-token` | String | inherits root | Bearer token for this tenant's VSCU device |
 | `auto-initialize` | Boolean | inherits root | Auto-init this tenant's device on startup |
 
 ---

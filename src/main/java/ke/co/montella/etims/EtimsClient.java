@@ -179,8 +179,12 @@ public class EtimsClient {
                     .uri(path)
                     .contentType(MediaType.APPLICATION_JSON)
                     .headers(headers -> {
-                        if (includeCmcKey && !config.isUseVscu()
-                                && config.getCmcKey() != null) {
+                        if (config.isUseVscu()) {
+                            String token = config.getVscuIntegrationToken();
+                            if (token != null && !token.isEmpty()) {
+                                headers.add("Authorization", "Bearer " + token);
+                            }
+                        } else if (includeCmcKey && config.getCmcKey() != null) {
                             headers.add("cmcKey", config.getCmcKey());
                         }
                     })

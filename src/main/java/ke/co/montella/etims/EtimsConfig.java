@@ -74,6 +74,16 @@ public class EtimsConfig {
     // ---------------------------------------------------------------
 
     /**
+     * Integration token required by the VSCU device for all API calls.
+     * Only used when {@link #isUseVscu()} is {@code true}.
+     *
+     * <p>Sent as the {@code Authorization: Bearer <token>} HTTP header on
+     * every VSCU request.  Obtain this token from your VSCU device's
+     * management interface.
+     */
+    private String vscuIntegrationToken;
+
+    /**
      * CMC Key received from KRA after a successful
      * {@code selectInitOsdcInfo} call.  This value is stored here and
      * included as the {@code cmcKey} HTTP header on subsequent requests.

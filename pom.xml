@@ -8,7 +8,7 @@
 
     <groupId>io.github.montella-03</groupId>
     <artifactId>etims-sdk</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <packaging>jar</packaging>
 
     <name>KRA eTIMS Java SDK</name>
@@ -34,7 +34,7 @@
         <connection>scm:git:git://github.com/montella-03/etims-sdk.git</connection>
         <developerConnection>scm:git:ssh://github.com/montella-03/etims-sdk.git</developerConnection>
         <url>https://github.com/montella-03/etims-sdk</url>
-        <tag>v1.1.0</tag>
+        <tag>v1.1.1</tag>
     </scm>
 
     <properties>
@@ -97,6 +97,20 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <version>3.3.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.26.3</version>
             <scope>test</scope>
         </dependency>
 
